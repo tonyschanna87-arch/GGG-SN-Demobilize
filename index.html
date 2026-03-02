@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GGG Demobilization v2</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Inter',sans-serif;background:#f0f2f5;color:#1a1a2e;}
+
+/* LOGIN */
+#login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%);}
+.login-card{background:white;border-radius:16px;padding:48px 40px;width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,0.3);}
+.login-logo{text-align:center;margin-bottom:32px;}
+.login-logo h1{font-size:28px;font-weight:700;color:#1a1a2e;}
+.login-logo p{color:#6b7280;font-size:14px;margin-top:4px;}
+.login-card label{display:block;font-size:13px;font-weight:500;color:#374151;margin-bottom:6px;}
+.login-card input{width:100%;padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;font-family:'Inter',sans-serif;margin-bottom:16px;outline:none;transition:border-color 0.2s;}
+.login-card input:focus{border-color:#0f3460;}
+.login-btn{width:100%;padding:12px;background:#0f3460;color:white;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;}
+.login-btn:hover{background:#16213e;}
+.login-error{color:#ef4444;font-size:13px;text-align:center;margin-top:12px;display:none;}
+
+/* APP */
+#app{display:none;flex-direction:column;height:100vh;overflow:hidden;}
+header{background:#1a1a2e;color:white;padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:60px;flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,0.2);}
+.header-left h1{font-size:18px;font-weight:700;}
+.header-left span{font-size:11px;color:#9ca3af;display:block;margin-top:1px;}
+.header-right{display:flex;align-items:center;gap:10px;}
+.sync-btn{background:#0f3460;border:none;color:white;padding:7px 14px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;font-family:'Inter',sans-serif;}
+.sync-btn:hover{background:#16213e;}
+.logout-btn{background:transparent;border:1px solid #4b5563;color:#9ca3af;padding:7px 12px;border-radius:8px;font-size:13px;cursor:pointer;font-family:'Inter',sans-serif;}
+.logout-btn:hover{border-color:#9ca3af;color:white;}
+
+/* STATS */
+.stats-bar{background:white;border-bottom:1px solid #e5e7eb;padding:12px 24px;display:flex;gap:0;flex-shrink:0;}
+.stat{display:flex;flex-direction:column;padding:4px 28px 4px 0;border-right:1px solid #e5e7eb;margin-right:28px;}
+.stat:last-child{border-right:none;}
+.stat-value{font-size:26px;font-weight:700;color:#1a1a2e;line-height:1;}
+.stat-label{font-size:11px;color:#6b7280;font-weight:500;margin-top:4px;text-transform:uppercase;letter-spacing:0.04em;}
+.stat-deployed .stat-value{color:#dc2626;}
+.stat-scheduled .stat-value{color:#d97706;}
+.stat-home .stat-value{color:#16a34a;}
+
+/* MAIN */
+.main-split{display:flex;flex:1;overflow:hidden;}
+
+/* LEFT PANEL */
+.left-panel{flex:1;min-width:0;display:flex;flex-direction:column;overflow:hidden;}
+.controls{padding:12px 20px;display:flex;align-items:center;flex-wrap:wrap;gap:10px;background:white;border-bottom:1px solid #e5e7eb;flex-shrink:0;}
+.search-box{flex:1;min-width:180px;position:relative;}
+.search-box input{width:100%;padding:8px 12px 8px 34px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;font-family:'Inter',sans-serif;outline:none;background:white;}
+.search-box input:focus{border-color:#0f3460;}
+.search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#9ca3af;font-size:13px;}
+.filter-btns{display:flex;gap:6px;}
+.filter-btn{padding:7px 13px;border-radius:8px;border:1.5px solid #e5e7eb;background:white;font-size:12px;font-weight:500;cursor:pointer;font-family:'Inter',sans-serif;color:#374151;}
+.filter-btn:hover{border-color:#0f3460;color:#0f3460;}
+.filter-btn.active{background:#0f3460;color:white;border-color:#0f3460;}
+.add-btn{padding:7px 14px;background:#16a34a;color:white;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;}
+.add-btn:hover{background:#15803d;}
+
+.table-wrap{flex:1;overflow:auto;padding:16px 20px 20px;}
+table{width:100%;border-collapse:collapse;background:white;border-radius:10px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,0.08);}
+thead{background:#1a1a2e;}
+thead th{padding:11px 12px;text-align:left;font-size:11px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:0.05em;white-space:nowrap;}
+tbody tr{border-bottom:1px solid #f3f4f6;transition:background 0.1s;cursor:grab;}
+tbody tr:last-child{border-bottom:none;}
+tbody tr:hover{background:#f0f7ff;}
+tbody tr.dragging{opacity:0.35;cursor:grabbing;}
+tbody tr.drag-target{outline:2px dashed #0f3460;background:#dbeafe !important;}
+td{padding:9px 12px;font-size:13px;color:#374151;}
+.unit-num{font-weight:600;color:#1a1a2e;}
+.editable-cell{cursor:text;padding:5px 8px;border-radius:5px;border:1.5px solid transparent;outline:none;width:100%;font-family:'Inter',sans-serif;font-size:13px;color:#374151;background:transparent;}
+.editable-cell:hover{background:#f3f4f6;border-color:#e5e7eb;}
+.editable-cell:focus{background:white;border-color:#0f3460;box-shadow:0 0 0 2px rgba(15,52,96,0.1);}
+.status-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;border:none;font-family:'Inter',sans-serif;white-space:nowrap;transition:transform 0.1s;}
+.status-badge:hover{transform:scale(1.06);}
+.status-Deployed{background:#fee2e2;color:#dc2626;}
+.status-Scheduled{background:#fef3c7;color:#d97706;}
+.status-Home{background:#dcfce7;color:#16a34a;}
+.status-dot{width:6px;height:6px;border-radius:50%;background:currentColor;}
+.load-ticket-btn{background:#0f3460;border:none;cursor:pointer;color:white;font-size:11px;padding:4px 9px;border-radius:5px;font-family:'Inter',sans-serif;font-weight:500;white-space:nowrap;}
+.load-ticket-btn:hover{background:#16213e;}
+.empty-state{text-align:center;padding:50px;color:#9ca3af;}
+.loading{text-align:center;padding:50px;color:#6b7280;}
+.spinner{width:28px;height:28px;border:3px solid #e5e7eb;border-top-color:#0f3460;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 12px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* RIGHT PANEL - LOAD TICKET */
+.right-panel{width:370px;flex-shrink:0;background:white;border-left:2px solid #e5e7eb;display:flex;flex-direction:column;overflow:hidden;}
+.ticket-header{background:#1a1a2e;color:white;padding:13px 18px;flex-shrink:0;}
+.ticket-header h2{font-size:14px;font-weight:700;letter-spacing:0.02em;}
+.ticket-header p{font-size:11px;color:#9ca3af;margin-top:3px;}
+.ticket-body{flex:1;overflow-y:auto;padding:14px 16px;}
+.ticket-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:#9ca3af;text-align:center;padding:24px;}
+.ticket-empty-icon{font-size:36px;margin-bottom:12px;}
+.ticket-empty p{font-size:13px;line-height:1.5;}
+.ticket-empty small{font-size:11px;margin-top:6px;display:block;}
+.t-section{margin-bottom:14px;}
+.t-section-title{font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;padding-bottom:5px;border-bottom:1.5px solid #f3f4f6;}
+.t-field{margin-bottom:9px;}
+.t-field label{display:block;font-size:11px;font-weight:600;color:#374151;margin-bottom:3px;}
+.t-field input,.t-field textarea{width:100%;padding:7px 10px;border:1.5px solid #e5e7eb;border-radius:7px;font-size:13px;font-family:'Inter',sans-serif;outline:none;color:#1a1a2e;}
+.t-field input:focus,.t-field textarea:focus{border-color:#0f3460;}
+.t-field textarea{resize:vertical;min-height:55px;}
+.t-row{display:flex;gap:8px;}
+.t-row .t-field{flex:1;}
+.machine-card{background:#f8fafc;border-radius:8px;padding:12px;border:1.5px solid #e2e8f0;margin-bottom:14px;}
+.machine-card-title{font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;}
+.machine-card-name{font-size:15px;font-weight:700;color:#1a1a2e;margin-bottom:6px;}
+.machine-detail{font-size:12px;color:#374151;margin-bottom:3px;}
+.machine-detail span{color:#6b7280;}
+.addr-block{background:#fff;border:1.5px solid #e5e7eb;border-radius:7px;padding:10px;font-size:12px;margin-bottom:8px;}
+.addr-block-label{font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;}
+.addr-block-text{color:#1a1a2e;font-weight:500;line-height:1.4;}
+.ticket-actions{padding:12px 16px;border-top:1px solid #e5e7eb;display:flex;gap:8px;flex-shrink:0;}
+.print-btn{flex:1;padding:10px;background:#0f3460;color:white;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;}
+.print-btn:hover{background:#16213e;}
+.clear-btn{padding:10px 14px;background:white;color:#6b7280;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;cursor:pointer;font-family:'Inter',sans-serif;}
+.clear-btn:hover{border-color:#9ca3af;}
+
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;align-items:center;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal{background:white;border-radius:16px;padding:28px;width:100%;max-width:500px;box-shadow:0 20px 60px rgba(0,0,0,0.3);max-height:90vh;overflow-y:auto;}
+.modal h2{font-size:18px;font-weight:700;margin-bottom:20px;color:#1a1a2e;}
+.form-row{display:flex;gap:12px;}
+.form-row .form-field{flex:1;}
+.form-field{margin-bottom:14px;}
+.form-field label{display:block;font-size:12px;font-weight:500;color:#374151;margin-bottom:5px;}
+.form-field input,.form-field select{width:100%;padding:9px 11px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;font-family:'Inter',sans-serif;outline:none;}
+.form-field input:focus,.form-field select:focus{border-color:#0f3460;}
+.modal-btns{display:flex;gap:10px;justify-content:flex-end;margin-top:8px;}
+.modal-cancel{padding:9px 18px;border:1.5px solid #e5e7eb;background:white;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;font-family:'Inter',sans-serif;}
+.modal-save{padding:9px 18px;background:#0f3460;color:white;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;}
+
+/* TOAST */
+.toast{position:fixed;bottom:20px;right:20px;background:#1a1a2e;color:white;padding:10px 18px;border-radius:10px;font-size:13px;font-weight:500;box-shadow:0 8px 24px rgba(0,0,0,0.2);z-index:300;opacity:0;transform:translateY(8px);transition:all 0.3s;pointer-events:none;}
+.toast.show{opacity:1;transform:translateY(0);}
+.toast.success{background:#16a34a;}
+.toast.error{background:#dc2626;}
+
+/* PRINT */
+@media print{
+  #login-screen,header,.stats-bar,.controls,.left-panel,.ticket-actions{display:none!important;}
+  .main-split{display:block;}
+  .right-panel{width:100%;border:none;box-shadow:none;}
+  .ticket-body{overflow:visible;}
+  body{background:white;}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">
+      <h1>GGG</h1>
+      <p>Spring Demobilization 2026</p>
+    </div>
+    <label>Username</label>
+    <input type="text" id="login-user" placeholder="Enter username" autocomplete="username">
+    <label>Password</label>
+    <input type="password" id="login-pass" placeholder="Enter password" autocomplete="current-password">
+    <button class="login-btn" onclick="doLogin()">Sign In</button>
+    <div class="login-error" id="login-error">Invalid username or password.</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <header>
+    <div class="header-left">
+      <h1>GGG Demobilization</h1>
+      <span id="last-sync">Spring Demobilization 2026</span>
+    </div>
+    <div class="header-right">
+      <button class="sync-btn" id="sync-btn" onclick="loadData()">↻ Refresh</button>
+      <button class="logout-btn" onclick="doLogout()">Logout</button>
+    </div>
+  </header>
+
+  <div class="stats-bar">
+    <div class="stat"><span class="stat-value" id="stat-total">—</span><span class="stat-label">Total Units</span></div>
+    <div class="stat stat-deployed"><span class="stat-value" id="stat-deployed">—</span><span class="stat-label">Deployed</span></div>
+    <div class="stat stat-scheduled"><span class="stat-value" id="stat-scheduled">—</span><span class="stat-label">Scheduled</span></div>
+    <div class="stat stat-home"><span class="stat-value" id="stat-home">—</span><span class="stat-label">Home</span></div>
+  </div>
+
+  <div class="main-split">
+    <!-- LEFT: TABLE -->
+    <div class="left-panel">
+      <div class="controls">
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="search" placeholder="Search unit #, make, model, site..." oninput="renderTable()">
+        </div>
+        <div class="filter-btns">
+          <button class="filter-btn active" onclick="setFilter('All',this)">All</button>
+          <button class="filter-btn" onclick="setFilter('Deployed',this)">Deployed</button>
+          <button class="filter-btn" onclick="setFilter('Scheduled',this)">Scheduled</button>
+          <button class="filter-btn" onclick="setFilter('Home',this)">Home</button>
+        </div>
+        <button class="add-btn" onclick="openAddModal()">+ Add Unit</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Unit #</th>
+              <th>Make</th>
+              <th>Model</th>
+              <th>Year</th>
+              <th>Type</th>
+              <th>Trailer Type</th>
+              <th>Deployed Site</th>
+              <th>Site Address</th>
+              <th>Site City</th>
+              <th>Home Delivery</th>
+              <th>Status</th>
+              <th>Ticket</th>
+            </tr>
+          </thead>
+          <tbody id="table-body">
+            <tr><td colspan="12"><div class="loading"><div class="spinner"></div><p>Loading equipment data...</p></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- RIGHT: LOAD TICKET -->
+    <div class="right-panel" id="right-panel">
+      <div class="ticket-header">
+        <h2>📋 Load Ticket</h2>
+        <p>Select a unit or drag a row here</p>
+      </div>
+      <div class="ticket-body" id="ticket-body">
+        <div class="ticket-empty">
+          <div class="ticket-empty-icon">🚜</div>
+          <p>No unit selected</p>
+          <small>Click "Ticket" on any row or drag a row into this panel to create a load ticket.</small>
+        </div>
+      </div>
+      <div class="ticket-actions" id="ticket-actions" style="display:none;">
+        <button class="clear-btn" onclick="clearTicket()">Clear</button>
+        <button class="print-btn" onclick="printTicket()">🖨️ Print / Save PDF</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ADD UNIT MODAL -->
+<div class="modal-overlay" id="add-modal">
+  <div class="modal">
+    <h2>Add New Unit</h2>
+    <div class="form-row">
+      <div class="form-field"><label>Unit #</label><input type="text" id="new-unit" placeholder="e.g. T-142"></div>
+      <div class="form-field"><label>Year</label><input type="text" id="new-year" placeholder="e.g. 2022"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-field"><label>Make</label><input type="text" id="new-make" placeholder="e.g. John Deere"></div>
+      <div class="form-field"><label>Model</label><input type="text" id="new-model" placeholder="e.g. 5075E"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-field"><label>Type</label><input type="text" id="new-type" placeholder="e.g. Tractor"></div>
+      <div class="form-field"><label>Trailer Type</label><input type="text" id="new-trailer" placeholder="e.g. Flatbed"></div>
+    </div>
+    <div class="form-field"><label>Deployed Site Name</label><input type="text" id="new-site" placeholder="e.g. Naperville Branch"></div>
+    <div class="form-row">
+      <div class="form-field"><label>Site Address</label><input type="text" id="new-address" placeholder="e.g. 123 Main St"></div>
+      <div class="form-field"><label>Site City</label><input type="text" id="new-city" placeholder="e.g. Naperville"></div>
+    </div>
+    <div class="form-field"><label>Home Delivery Location</label><input type="text" id="new-delivery" placeholder="e.g. Main Yard - Mokena"></div>
+    <div class="form-field"><label>Status</label>
+      <select id="new-status"><option>Deployed</option><option>Scheduled</option><option>Home</option></select>
+    </div>
+    <div class="modal-btns">
+      <button class="modal-cancel" onclick="closeModal()">Cancel</button>
+      <button class="modal-save" onclick="addUnit()">Add Unit</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz9pbULqlrSk9BGj6ftFZ8IZZRmrQLP13bWJZVFsY6WgmqGvMsoAglyhjNOFmh4-bTL/exec';
+const CREDS = { user: 'GGGLogistics', pass: 'GGG1597!' };
+const STATUSES = ['Deployed', 'Scheduled', 'Home'];
+const COLS = ['Unit #','Make','Model','Year','Type','Trailer Type','Deployed Site Name','Deployed Site Address','Deployed Site City','Home Delivery Location','Status'];
+
+let allData = [];
+let currentFilter = 'All';
+let ticketMachine = null;
+let dragSrcIndex = null;
+
+// ── AUTH ──────────────────────────────────────────
+function doLogin() {
+  const u = document.getElementById('login-user').value.trim();
+  const p = document.getElementById('login-pass').value.trim();
+  if (u === CREDS.user && p === CREDS.pass) {
+    sessionStorage.setItem('ggg-auth','1');
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'flex';
+    loadData();
+  } else {
+    document.getElementById('login-error').style.display = 'block';
+  }
+}
+function doLogout() { sessionStorage.removeItem('ggg-auth'); location.reload(); }
+['login-user','login-pass'].forEach(id => {
+  document.getElementById(id).addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+});
+if (sessionStorage.getItem('ggg-auth')) {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+  loadData();
+}
+
+// ── DATA ──────────────────────────────────────────
+async function loadData() {
+  const btn = document.getElementById('sync-btn');
+  btn.textContent = '↻ Syncing...';
+  try {
+    const res = await fetch(SCRIPT_URL + '?action=read');
+    const json = await res.json();
+    if (json.success) {
+      allData = json.data;
+      updateStats();
+      renderTable();
+      document.getElementById('last-sync').textContent = 'Synced: ' + new Date().toLocaleTimeString();
+      showToast('Data loaded', 'success');
+    } else {
+      showToast('Error loading data', 'error');
+    }
+  } catch(e) {
+    showToast('Connection error — check Apps Script deployment', 'error');
+    document.getElementById('table-body').innerHTML = '<tr><td colspan="12"><div class="empty-state"><p>Could not connect to Google Sheet.</p></div></td></tr>';
+  }
+  btn.textContent = '↻ Refresh';
+}
+
+async function saveCell(rowIndex, col, value) {
+  try {
+    const url = `${SCRIPT_URL}?action=write&row=${rowIndex+1}&col=${encodeURIComponent(col)}&value=${encodeURIComponent(value)}`;
+    const res = await fetch(url);
+    const json = await res.json();
+    if (json.success) showToast('Saved ✓', 'success');
+    else showToast('Save failed', 'error');
+  } catch(e) { showToast('Connection error', 'error'); }
+}
+
+async function addUnit() {
+  const unit = document.getElementById('new-unit').value.trim();
+  if (!unit) { showToast('Unit # is required', 'error'); return; }
+  const row = {
+    'Unit #': unit,
+    'Make': document.getElementById('new-make').value,
+    'Model': document.getElementById('new-model').value,
+    'Year': document.getElementById('new-year').value,
+    'Type': document.getElementById('new-type').value,
+    'Trailer Type': document.getElementById('new-trailer').value,
+    'Deployed Site Name': document.getElementById('new-site').value,
+    'Deployed Site Address': document.getElementById('new-address').value,
+    'Deployed Site City': document.getElementById('new-city').value,
+    'Home Delivery Location': document.getElementById('new-delivery').value,
+    'Status': document.getElementById('new-status').value,
+  };
+  const newRowIndex = allData.length + 1;
+  allData.push(row);
+  closeModal();
+  updateStats();
+  renderTable();
+  for (const [col, val] of Object.entries(row)) {
+    const url = `${SCRIPT_URL}?action=write&row=${newRowIndex}&col=${encodeURIComponent(col)}&value=${encodeURIComponent(val)}`;
+    await fetch(url);
+  }
+  showToast('Unit added', 'success');
+}
+
+// ── STATS ─────────────────────────────────────────
+function updateStats() {
+  document.getElementById('stat-total').textContent = allData.length;
+  document.getElementById('stat-deployed').textContent = allData.filter(r => r['Status']==='Deployed').length;
+  document.getElementById('stat-scheduled').textContent = allData.filter(r => r['Status']==='Scheduled').length;
+  document.getElementById('stat-home').textContent = allData.filter(r => r['Status']==='Home').length;
+}
+
+// ── TABLE ─────────────────────────────────────────
+function setFilter(f, btn) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderTable();
+}
+
+function renderTable() {
+  const search = document.getElementById('search').value.toLowerCase();
+  const filtered = allData.map((row, i) => ({row, i})).filter(({row}) => {
+    const matchFilter = currentFilter === 'All' || row['Status'] === currentFilter;
+    const matchSearch = !search || Object.values(row).some(v => String(v).toLowerCase().includes(search));
+    return matchFilter && matchSearch;
+  });
+  const tbody = document.getElementById('table-body');
+  if (!filtered.length) {
+    tbody.innerHTML = '<tr><td colspan="12"><div class="empty-state"><p>No equipment found.</p></div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = filtered.map(({row, i}) => {
+    const status = row['Status'] || 'Deployed';
+    return `<tr draggable="true" data-index="${i}"
+      ondragstart="onDragStart(event,${i})"
+      ondragend="onDragEnd(event)">
+      <td class="unit-num">${esc(row['Unit #'])}</td>
+      ${['Make','Model','Year','Type','Trailer Type','Deployed Site Name','Deployed Site Address','Deployed Site City','Home Delivery Location'].map(col => `
+        <td><input class="editable-cell" value="${esc(row[col]||'')}"
+          onblur="handleEdit(${i},'${col}',this.value)"
+          onkeydown="if(event.key==='Enter')this.blur()"
+          ondragstart="event.stopPropagation()"></td>
+      `).join('')}
+      <td>
+        <button class="status-badge status-${status}" onclick="cycleStatus(${i},this)">
+          <span class="status-dot"></span>${status}
+        </button>
+      </td>
+      <td><button class="load-ticket-btn" onclick="loadTicket(${i})">Ticket</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function esc(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function handleEdit(index, col, value) {
+  if (String(allData[index][col]||'') === value) return;
+  allData[index][col] = value;
+  saveCell(index, col, value);
+}
+
+function cycleStatus(index, btn) {
+  const cur = allData[index]['Status'] || 'Deployed';
+  const next = STATUSES[(STATUSES.indexOf(cur)+1) % STATUSES.length];
+  allData[index]['Status'] = next;
+  btn.className = `status-badge status-${next}`;
+  btn.innerHTML = `<span class="status-dot"></span>${next}`;
+  saveCell(index, 'Status', next);
+  updateStats(); // instant update
+}
+
+// ── DRAG & DROP ───────────────────────────────────
+function onDragStart(e, index) {
+  dragSrcIndex = index;
+  e.target.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'copy';
+}
+function onDragEnd(e) {
+  e.target.classList.remove('dragging');
+  document.getElementById('right-panel').style.background = '';
+  document.getElementById('right-panel').style.borderColor = '';
+}
+
+const rightPanel = document.getElementById('right-panel');
+rightPanel.addEventListener('dragover', e => {
+  e.preventDefault();
+  rightPanel.style.background = '#f0f7ff';
+  rightPanel.style.borderColor = '#0f3460';
+});
+rightPanel.addEventListener('dragleave', () => {
+  rightPanel.style.background = '';
+  rightPanel.style.borderColor = '';
+});
+rightPanel.addEventListener('drop', e => {
+  e.preventDefault();
+  rightPanel.style.background = '';
+  rightPanel.style.borderColor = '';
+  if (dragSrcIndex !== null) {
+    loadTicket(dragSrcIndex);
+    dragSrcIndex = null;
+  }
+});
+
+// ── LOAD TICKET ───────────────────────────────────
+function loadTicket(index) {
+  ticketMachine = allData[index];
+  const m = ticketMachine;
+  const today = new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+
+  document.getElementById('ticket-body').innerHTML = `
+    <div class="machine-card">
+      <div class="machine-card-title">Equipment</div>
+      <div class="machine-card-name">${esc(m['Unit #'])} — ${esc(m['Make'])} ${esc(m['Model'])}</div>
+      <div class="machine-detail"><span>Year:</span> <strong>${esc(m['Year'])}</strong> &nbsp;|&nbsp; <span>Type:</span> <strong>${esc(m['Type'])}</strong> &nbsp;|&nbsp; <span>Trailer:</span> <strong>${esc(m['Trailer Type'])}</strong></div>
+    </div>
+
+    <div class="t-section">
+      <div class="t-section-title">Dispatch Info</div>
+      <div class="t-row">
+        <div class="t-field"><label>Driver Name</label><input type="text" id="t-driver" placeholder="Full name"></div>
+        <div class="t-field"><label>Truck #</label><input type="text" id="t-truck" placeholder="e.g. T-07"></div>
+      </div>
+      <div class="t-field"><label>Date</label><input type="text" id="t-date" value="${today}"></div>
+      <div class="t-field"><label>Dispatch Notes</label><textarea id="t-dispatch" placeholder="Instructions, special handling, route notes..."></textarea></div>
+    </div>
+
+    <div class="t-section">
+      <div class="t-section-title">Pickup Location</div>
+      <div class="addr-block">
+        <div class="addr-block-label">Deployed Site</div>
+        <div class="addr-block-text">${esc(m['Deployed Site Name'])}<br>${esc(m['Deployed Site Address'])}<br>${esc(m['Deployed Site City'])}</div>
+      </div>
+    </div>
+
+    <div class="t-section">
+      <div class="t-section-title">Delivery Location</div>
+      <div class="addr-block">
+        <div class="addr-block-label">Home Delivery</div>
+        <div class="addr-block-text">${esc(m['Home Delivery Location'])}</div>
+      </div>
+    </div>
+
+    <div class="t-section">
+      <div class="t-section-title">Driver Notes</div>
+      <div class="t-field"><textarea id="t-driver-notes" placeholder="Driver can add notes here..." style="min-height:70px;"></textarea></div>
+    </div>
+  `;
+  document.getElementById('ticket-actions').style.display = 'flex';
+  showToast('Ticket loaded for ' + m['Unit #'], 'success');
+}
+
+function clearTicket() {
+  ticketMachine = null;
+  document.getElementById('ticket-body').innerHTML = `
+    <div class="ticket-empty">
+      <div class="ticket-empty-icon">🚜</div>
+      <p>No unit selected</p>
+      <small>Click "Ticket" on any row or drag a row into this panel to create a load ticket.</small>
+    </div>`;
+  document.getElementById('ticket-actions').style.display = 'none';
+}
+
+function printTicket() {
+  if (!ticketMachine) return;
+  const m = ticketMachine;
+  const driver = document.getElementById('t-driver')?.value || '';
+  const truck = document.getElementById('t-truck')?.value || '';
+  const date = document.getElementById('t-date')?.value || '';
+  const dispatch = document.getElementById('t-dispatch')?.value || '';
+  const driverNotes = document.getElementById('t-driver-notes')?.value || '';
+
+  const win = window.open('','_blank','width=800,height=900');
+  win.document.write(`<!DOCTYPE html><html><head><title>Load Ticket — ${m['Unit #']}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'Inter',sans-serif;color:#1a1a2e;padding:40px;max-width:700px;margin:0 auto;}
+    .lt-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px;padding-bottom:20px;border-bottom:2px solid #1a1a2e;}
+    .lt-company{font-size:22px;font-weight:700;}
+    .lt-title{font-size:13px;color:#6b7280;margin-top:3px;}
+    .lt-date{text-align:right;font-size:13px;color:#374151;}
+    .lt-ticket-num{font-size:11px;color:#9ca3af;margin-top:3px;}
+    .section{margin-bottom:22px;}
+    .section-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#6b7280;margin-bottom:10px;padding-bottom:4px;border-bottom:1px solid #e5e7eb;}
+    .machine-box{background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:8px;padding:14px;}
+    .machine-box-name{font-size:16px;font-weight:700;margin-bottom:6px;}
+    .machine-box-detail{font-size:13px;color:#374151;}
+    .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+    .info-item label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:#9ca3af;display:block;margin-bottom:3px;}
+    .info-item .val{font-size:14px;font-weight:600;color:#1a1a2e;}
+    .addr-box{background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:8px;padding:12px;}
+    .addr-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#6b7280;margin-bottom:5px;}
+    .addr-val{font-size:14px;font-weight:600;color:#1a1a2e;line-height:1.5;}
+    .notes-box{background:#fffbeb;border:1.5px solid #fde68a;border-radius:8px;padding:12px;min-height:60px;font-size:13px;color:#374151;line-height:1.6;}
+    .driver-notes-box{background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:8px;padding:12px;min-height:60px;font-size:13px;color:#374151;line-height:1.6;}
+    .sig-row{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:24px;padding-top:20px;border-top:1px solid #e5e7eb;}
+    .sig-box{border-bottom:1.5px solid #1a1a2e;padding-bottom:4px;}
+    .sig-label{font-size:10px;color:#9ca3af;margin-top:5px;}
+    @media print{body{padding:24px;}}
+  </style></head><body>
+  <div class="lt-header">
+    <div>
+      <div class="lt-company">GGG — Load Ticket</div>
+      <div class="lt-title">Spring Demobilization 2026</div>
+    </div>
+    <div class="lt-date"><strong>${date}</strong><div class="lt-ticket-num">Unit: ${m['Unit #']}</div></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Equipment</div>
+    <div class="machine-box">
+      <div class="machine-box-name">${m['Unit #']} — ${m['Make']} ${m['Model']}</div>
+      <div class="machine-box-detail">Year: ${m['Year']} &nbsp;|&nbsp; Type: ${m['Type']} &nbsp;|&nbsp; Trailer: ${m['Trailer Type']}</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Dispatch Info</div>
+    <div class="info-grid">
+      <div class="info-item"><label>Driver Name</label><div class="val">${driver || '&nbsp;'}</div></div>
+      <div class="info-item"><label>Truck #</label><div class="val">${truck || '&nbsp;'}</div></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Dispatch Notes</div>
+    <div class="notes-box">${dispatch || 'No dispatch notes.'}</div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Pickup Location</div>
+    <div class="addr-box">
+      <div class="addr-label">Deployed Site</div>
+      <div class="addr-val">${m['Deployed Site Name']}<br>${m['Deployed Site Address']}, ${m['Deployed Site City']}</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Delivery Location</div>
+    <div class="addr-box">
+      <div class="addr-label">Home Delivery</div>
+      <div class="addr-val">${m['Home Delivery Location']}</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Driver Notes</div>
+    <div class="driver-notes-box">${driverNotes || '&nbsp;'}</div>
+  </div>
+
+  <div class="sig-row">
+    <div><div class="sig-box">&nbsp;</div><div class="sig-label">Driver Signature</div></div>
+    <div><div class="sig-box">&nbsp;</div><div class="sig-label">Dispatcher Signature</div></div>
+  </div>
+
+  <script>window.onload=()=>{window.print();}<\/script>
+  </body></html>`);
+  win.document.close();
+}
+
+// ── MODAL ─────────────────────────────────────────
+function openAddModal() { document.getElementById('add-modal').classList.add('open'); }
+function closeModal() { document.getElementById('add-modal').classList.remove('open'); }
+document.getElementById('add-modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('add-modal')) closeModal();
+});
+
+// ── TOAST ─────────────────────────────────────────
+function showToast(msg, type='') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + type;
+  setTimeout(() => t.className = 'toast', 2800);
+}
+</script>
+</body>
+</html>
